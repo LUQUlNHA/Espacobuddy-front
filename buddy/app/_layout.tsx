@@ -1,0 +1,15 @@
+import { Stack } from 'expo-router';
+
+export default function Layout() {
+  return (
+    <Stack>
+      <Stack.Screen name="index" options={{ headerShown: false }} />
+      <Stack.Screen name="login" options={{ title: 'Entrar' }}/>
+      <Stack.Screen name="welcome" options={{ title: 'Bem-Vindo' }}/>
+      <Stack.Screen name="register" options={{ title: 'Registrar-se' }}/>
+      <Stack.Screen name="criarRotinas" options={{ title: 'Criar Rotinas' }}/>
+      <Stack.Screen name="home" options={{ headerShown: false }}/>
+      <Stack.Screen name="settings" options={{ title: 'Configurações' }}/>
+    </Stack>
+  );
+}
