@@ -1,10 +1,22 @@
-import { View, Text, TextInput, Image, Switch, StyleSheet, TouchableOpacity, ScrollView, Modal, Button } from 'react-native';
-import { useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  Image,
+  Switch,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Modal,
+  Button,
+} from 'react-native';
+import { useState, useEffect } from 'react';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 
 export default function Home() {
   const router = useRouter();
+  const { routine } = useLocalSearchParams();
 
   const [smallOn, setSmallOn] = useState(false);
   const [mediumOn, setMediumOn] = useState(true);
@@ -23,14 +35,17 @@ export default function Home() {
     console.log('Comida dispensada!');
   };
 
-  const handleRoutinePress = (nome: string) => {
-    console.log(`Rotina selecionada: ${nome}`);
+  const handleRoutinePress = (rotina: { id: number; nome: string }) => {
+    router.push({
+      pathname: '/criarRotinas',
+      params: { routineName: rotina.nome },
+    });
   };
 
   const handleEditRoutine = (id: number, nome: string) => {
     setCurrentEditingRoutineId(id);
     setEditedRoutineName(nome);
-    setIsModalVisible(true); // Abre o modal para edição
+    setIsModalVisible(true);
   };
 
   const handleSaveRoutine = () => {
@@ -40,10 +55,24 @@ export default function Home() {
           r.id === currentEditingRoutineId ? { ...r, nome: editedRoutineName } : r
         )
       );
-      setIsModalVisible(false); // Fecha o modal após salvar
-      setEditedRoutineName(''); // Limpa o campo de texto
+      setIsModalVisible(false);
+      setEditedRoutineName('');
     }
   };
+
+  // Quando retornar da tela de criação, adiciona nova rotina se existir
+  useEffect(() => {
+    if (routine) {
+      try {
+        const newRoutine = JSON.parse(routine as string);
+        if (newRoutine?.name) {
+          setRotinas((prev) => [...prev, { id: Date.now(), nome: newRoutine.name }]);
+        }
+      } catch (err) {
+        console.error('Erro ao adicionar nova rotina:', err);
+      }
+    }
+  }, [routine]);
 
   return (
     <ScrollView style={styles.container}>
@@ -59,7 +88,7 @@ export default function Home() {
       />
 
       <TouchableOpacity style={styles.dispenseButton} onPress={handleDispense}>
-        <Text style={styles.dispenseText}>Dispense Food</Text>
+        <Text style={styles.dispenseText}>Dispensar Comida</Text>
       </TouchableOpacity>
 
       <SliderRow label="Small" active={smallOn} onToggle={setSmallOn} />
@@ -82,11 +111,12 @@ export default function Home() {
         <Text style={styles.createRoutineText}>Criar Rotina</Text>
       </TouchableOpacity>
 
+      {/* Lista de Rotinas */}
       {rotinas.map((rotina) => (
         <TouchableOpacity
           key={rotina.id}
           style={styles.routineItem}
-          onPress={() => handleRoutinePress(rotina.nome)}
+          onPress={() => handleRoutinePress(rotina)}
         >
           <Ionicons name="play-circle-outline" size={24} />
           <Text style={styles.routineText}>{rotina.nome}</Text>
@@ -96,7 +126,7 @@ export default function Home() {
         </TouchableOpacity>
       ))}
 
-      {/* Modal Customizado */}
+      {/* Modal para editar nome */}
       <Modal
         visible={isModalVisible}
         animationType="slide"
@@ -125,7 +155,7 @@ export default function Home() {
   );
 }
 
-function SliderRow({ label, active, onToggle }: { label: string, active: boolean, onToggle: (val: boolean) => void }) {
+function SliderRow({ label, active, onToggle }: { label: string; active: boolean; onToggle: (val: boolean) => void }) {
   const largura = active ? '70%' : '30%';
   return (
     <View style={styles.sliderRow}>

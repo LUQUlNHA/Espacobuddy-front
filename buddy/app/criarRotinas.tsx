@@ -1,10 +1,21 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Modal, StyleSheet, Switch, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Modal,
+  StyleSheet,
+  Switch,
+  ScrollView,
+  TextInput,
+} from 'react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 
 export default function CreateRoutine() {
   const router = useRouter();
+  const { routineName } = useLocalSearchParams();
 
+  const [routineNameState, setRoutineNameState] = useState('');
   const [hour, setHour] = useState('10');
   const [minute, setMinute] = useState('00');
   const [amPm, setAmPm] = useState<'AM' | 'PM'>('AM');
@@ -12,11 +23,26 @@ export default function CreateRoutine() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
 
+  useEffect(() => {
+    if (typeof routineName === 'string') {
+      setRoutineNameState(routineName);
+    }
+  }, [routineName]);
+
   const time = `${hour}:${minute} ${amPm}`;
 
   const handleSave = () => {
-    const newRoutine = { time, portionSize, notificationsEnabled };
-    router.push({ pathname: '/home', params: { routine: JSON.stringify(newRoutine) } });
+    const newRoutine = {
+      name: routineNameState,
+      time,
+      portionSize,
+      notificationsEnabled,
+    };
+
+    router.replace({
+      pathname: '/home',
+      params: { routine: JSON.stringify(newRoutine) },
+    });
   };
 
   const hours = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'));
@@ -24,6 +50,14 @@ export default function CreateRoutine() {
 
   return (
     <View style={styles.container}>
+      <Text style={styles.subtitle}>Nome da rotina</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Digite o nome da rotina"
+        value={routineNameState}
+        onChangeText={setRoutineNameState}
+      />
+
       <Text style={styles.title}>Horário</Text>
 
       <TouchableOpacity style={styles.timeBox} onPress={() => setModalVisible(true)}>
@@ -99,13 +133,21 @@ const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, backgroundColor: '#fff' },
   title: { fontSize: 18, fontWeight: 'bold', marginBottom: 10 },
   subtitle: { fontSize: 16, fontWeight: '500', marginVertical: 10 },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 6,
+    padding: 12,
+    marginBottom: 20,
+    fontSize: 16,
+  },
   timeBox: {
     borderWidth: 1,
     borderColor: '#ccc',
     padding: 15,
     borderRadius: 8,
     alignItems: 'center',
-    marginBottom: 20
+    marginBottom: 20,
   },
   timeText: { fontSize: 16 },
   portions: { flexDirection: 'row', justifyContent: 'space-between' },
@@ -122,33 +164,32 @@ const styles = StyleSheet.create({
   switchContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginVertical: 20
+    marginVertical: 20,
   },
   saveButton: {
     backgroundColor: '#00B894',
     padding: 15,
     borderRadius: 6,
-    alignItems: 'center'
+    alignItems: 'center',
   },
   saveText: { color: '#fff', fontWeight: 'bold' },
-
   modalOverlay: {
     flex: 1,
     backgroundColor: '#00000088',
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center',
   },
   pickerContainer: {
     backgroundColor: '#fff',
     width: '85%',
     borderRadius: 12,
-    padding: 20
+    padding: 20,
   },
   pickerRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     marginVertical: 10,
-    height: 120
+    height: 120,
   },
   pickerColumn: {
     width: 60,
@@ -156,28 +197,28 @@ const styles = StyleSheet.create({
   pickerText: {
     fontSize: 18,
     textAlign: 'center',
-    paddingVertical: 10
+    paddingVertical: 10,
   },
   selectedItem: {
     backgroundColor: '#00B894',
-    borderRadius: 6
+    borderRadius: 6,
   },
   selectedText: {
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 18,
     textAlign: 'center',
-    paddingVertical: 10
+    paddingVertical: 10,
   },
   modalButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 20
+    marginTop: 20,
   },
   modalBtn: {
     paddingVertical: 10,
     paddingHorizontal: 20,
     backgroundColor: '#00B894',
-    borderRadius: 6
-  }
+    borderRadius: 6,
+  },
 });
