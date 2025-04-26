@@ -1,6 +1,7 @@
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
+import { loginWithCredentials } from '../utils/keycloak.js'; // ajuste o caminho
 
 export default function Login() {
   const router = useRouter();
@@ -8,18 +9,25 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
-  const handleLogin = () => {
-    if (email === 'Pedro@gmail.com' && password === '1234') {
-      router.replace('/home');
-    } else {
-      setError('Email ou senha inválidos');
+  const handleLogin = async () => {
+    try {
+      const result = await loginWithCredentials(email, password);
+      if (result.success) {
+        router.replace('/home');
+      } else {
+        setError(result.message || 'Erro ao fazer login');
+      }
+    } catch (err) {
+      setError('Erro na conexão com o servidor');
     }
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Conta de acesso</Text>
-      <Text style={styles.subtitle}>Gerencie a alimentação do seu animal de estimação com facilidade</Text>
+      <Text style={styles.subtitle}>
+        Gerencie a alimentação do seu animal de estimação com facilidade
+      </Text>
 
       <TextInput
         placeholder="Digite aqui seu email"
@@ -41,16 +49,15 @@ export default function Login() {
 
       <Text style={styles.forgot}>Esqueceu sua senha?</Text>
 
-      <TouchableOpacity
-        style={styles.loginButton}
-        onPress={handleLogin}
-      >
+      <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
         <Text style={styles.loginText}>Login</Text>
       </TouchableOpacity>
 
       <Text style={styles.signupText}>
-      Precisa criar uma conta?{' '}
-        <Text style={styles.signupLink} onPress={() => router.push('/register')}>Inscrever-se</Text>
+        Precisa criar uma conta?{' '}
+        <Text style={styles.signupLink} onPress={() => router.push('/register')}>
+          Inscrever-se
+        </Text>
       </Text>
     </View>
   );

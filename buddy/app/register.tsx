@@ -1,6 +1,7 @@
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
+import { registerNewUser } from '../utils/keycloak'; // ajuste o caminho se necessário
 
 export default function Register() {
   const [name, setName] = useState('');
@@ -16,15 +17,29 @@ export default function Register() {
     console.log('Ver termos e condições');
   };
 
-  const handleCreateAccount = () => {
+  const handleCreateAccount = async () => {
     if (!name || !email || !password) {
       setError('Por favor, preencha todos os campos');
       return;
     }
 
-    // Aqui você pode implementar a lógica para salvar o usuário
-    setError('');
-    router.replace('/login');
+    if (!agreed) {
+      setError('Você precisa aceitar os termos');
+      return;
+    }
+
+    try {
+      const result = await registerNewUser(name, email, password);
+      if (result.success) {
+        setError('');
+        router.replace('/login');
+      } else {
+        setError(result.message || 'Erro ao criar usuário');
+      }
+    } catch (err) {
+      console.error(err);
+      setError('Erro ao conectar com o servidor');
+    }
   };
 
   return (
@@ -64,7 +79,6 @@ export default function Register() {
         </TouchableOpacity>
 
         <Text style={styles.termsText}>
-          
           eu concordo com{' '}
           <Text style={styles.termsLink} onPress={handleTermsPress}>
             Termos & Condições
