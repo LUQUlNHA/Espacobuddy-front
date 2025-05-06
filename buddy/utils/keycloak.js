@@ -1,7 +1,7 @@
-const KEYCLOAK_HOST = 'http://192.168.0.29:8080';
+const KEYCLOAK_HOST = 'http://172.20.10.3:8080'; //Mudar sempre aqui
 const REALM = 'espaco-buddy';
 const CLIENT_ID = 'espaco-buddy-client';
-const CLIENT_SECRET = 'bh3HS75bPGyRCQU53mpBkJd1BHluZici';
+const CLIENT_SECRET = '9wYxwmnwjaAUt31lyAZYcyTT6xuz9UIt';
 const CLIENT_SECRET_ADMIN = 's2vNJ36LVkSFyrwQB6g8WINGBiknRGpC'
 
 export async function loginWithCredentials(email, password) {
