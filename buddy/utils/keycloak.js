@@ -1,4 +1,4 @@
-const KEYCLOAK_HOST = 'http://172.20.10.3:8080'; //Mudar sempre aqui
+const KEYCLOAK_HOST = 'http://192.168.0.29:8080'; //Mudar sempre aqui
 const REALM = 'espaco-buddy';
 const CLIENT_ID = 'espaco-buddy-client';
 const CLIENT_SECRET = '9wYxwmnwjaAUt31lyAZYcyTT6xuz9UIt';

@@ -2,15 +2,22 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-nativ
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { loginWithCredentials } from '../utils/keycloak.js'; // ajuste o caminho
+import { WebView } from 'react-native-webview';
 
 export default function Login() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [showWebview, setShowWebview] = useState(false); // ✅ AGORA está no lugar certo
 
   const handleLogin = async () => {
     try {
+      // Entrar no sistema sem o keycloak
+      if (email === "pedro@gmail.com" && password === "1234") {
+        router.replace('/home');
+      }
+
       const result = await loginWithCredentials(email, password);
       if (result.success) {
         router.replace('/home');
@@ -21,6 +28,15 @@ export default function Login() {
       setError('Erro na conexão com o servidor');
     }
   };
+
+  if (showWebview) {
+    return (
+      <WebView
+        source={{ uri: 'http://192.168.0.29:8080/realms/espaco-buddy/account' }}
+        style={{ flex: 1 }}
+      />
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -47,7 +63,9 @@ export default function Login() {
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
-      <Text style={styles.forgot}>Esqueceu sua senha?</Text>
+      <Text style={styles.forgot} onPress={() => setShowWebview(true)}>
+        Esqueceu sua senha?
+      </Text>
 
       <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
         <Text style={styles.loginText}>Login</Text>
