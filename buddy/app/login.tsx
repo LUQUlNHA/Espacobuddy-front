@@ -32,7 +32,7 @@ export default function Login() {
   if (showWebview) {
     return (
       <WebView
-        source={{ uri: 'http://192.168.0.29:8080/realms/espaco-buddy/account' }}
+        source={{ uri: 'http://172.20.10.3:8080/realms/espaco-buddy/account' }}
         style={{ flex: 1 }}
       />
     );

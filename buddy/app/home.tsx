@@ -96,10 +96,13 @@ export default function Home() {
       <SliderRow label="Large" active={largeOn} onToggle={setLargeOn} />
 
       <Image
-        source={{ uri: 'https://placekitten.com/200/200' }}
+        source={require('../assets/images/alimentador.jpeg')}
         style={styles.image}
         resizeMode="cover"
       />
+
+
+
       <Text style={styles.imageLabel}>MEDIUM FOOD DISPENSED</Text>
       <Text style={styles.success}>success</Text>
 
@@ -178,7 +181,7 @@ function BottomNav() {
 
       <TouchableOpacity style={styles.navItem} onPress={() => router.push('/manual')}>
         <Ionicons name="fast-food-outline" size={24} />
-        <Text>Manual Feed</Text>
+        <Text>Feed</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.navItem} onPress={() => router.push('/history')}>
