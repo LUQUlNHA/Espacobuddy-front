@@ -1,14 +1,18 @@
-const KEYCLOAK_HOST = 'http://172.20.10.3:8080'; //Mudar sempre aqui
+import * as SecureStore from 'expo-secure-store';
+
+// Mudar sempre aqui
+const KEYCLOAK_HOST = 'http://192.168.0.29:8080'; 
 const REALM = 'espaco-buddy';
 const CLIENT_ID = 'espaco-buddy-client';
 const CLIENT_SECRET = '9wYxwmnwjaAUt31lyAZYcyTT6xuz9UIt';
-const CLIENT_SECRET_ADMIN = 's2vNJ36LVkSFyrwQB6g8WINGBiknRGpC'
+const CLIENT_SECRET_ADMIN = 's2vNJ36LVkSFyrwQB6g8WINGBiknRGpC';
 
+// ----- LOGIN COM CREDENCIAIS -----
 export async function loginWithCredentials(email, password) {
     const params = new URLSearchParams();
     params.append('grant_type', 'password');
     params.append('client_id', CLIENT_ID);
-    params.append('client_secret', CLIENT_SECRET); // ✅ necessário para client confidential
+    params.append('client_secret', CLIENT_SECRET);
     params.append('username', email);
     params.append('password', password);
 
@@ -18,19 +22,36 @@ export async function loginWithCredentials(email, password) {
         body: params.toString(),
     });
 
+    const data = await response.json();
+
     if (!response.ok) {
-        return { success: false, message: 'Usuário ou senha inválidos' };
+        return { success: false, message: data.error_description || 'Usuário ou senha inválidos' };
     }
 
-    const data = await response.json();
+    await saveInfo("access_token", data.access_token);
+    await saveInfo("refresh_token", data.refresh_token);
+
     return { success: true, token: data.access_token };
 }
 
+// ----- DECODIFICAÇÃO DE TOKEN -----
+export async function decodeToken(token) {
+    try {
+        const payloadBase64 = token.split('.')[1];
+        const payloadJson = atob(payloadBase64);
+        return JSON.parse(payloadJson);
+    } catch (error) {
+        console.error('Erro ao decodificar token!', error);
+        return null;
+    }
+}
+
+// ----- OBTER TOKEN DE ADMIN -----
 export async function getAdminToken() {
     const params = new URLSearchParams();
     params.append('grant_type', 'password');
     params.append('client_id', 'admin-cli');
-    params.append('client_secret', CLIENT_SECRET_ADMIN); // ✅ adicionado
+    params.append('client_secret', CLIENT_SECRET_ADMIN);
     params.append('username', 'admin');
     params.append('password', 'admin');
 
@@ -48,11 +69,11 @@ export async function getAdminToken() {
     return data.access_token;
 }
 
+// ----- CADASTRAR USUÁRIO -----
 export async function registerNewUser(name, email, password) {
     const token = await getAdminToken();
 
-    // Criar o usuário
-    const createUserRes = await fetch(`${KEYCLOAK_HOST}/admin/realms/${REALM}/users`, {
+    const res = await fetch(`${KEYCLOAK_HOST}/admin/realms/${REALM}/users`, {
         method: 'POST',
         headers: {
             Authorization: `Bearer ${token}`,
@@ -60,7 +81,7 @@ export async function registerNewUser(name, email, password) {
         },
         body: JSON.stringify({
             username: email,
-            email: email,
+            email,
             enabled: true,
             emailVerified: true,
             firstName: name,
@@ -74,10 +95,38 @@ export async function registerNewUser(name, email, password) {
         }),
     });
 
-    if (createUserRes.status === 201) {
+    if (res.status === 201) {
         return { success: true };
     } else {
-        const err = await createUserRes.text();
-        return { success: false, message: err };
+        const error = await res.text();
+        return { success: false, message: error };
+    }
+}
+
+// ======= FUNÇÕES DE ARMAZENAMENTO SEGURO =======
+
+export async function saveInfo(KEY, value) {
+    try {
+        await SecureStore.setItemAsync(KEY, value);
+        console.log("Token has been saved!");
+    } catch (e) {
+        console.error('Erro ao salvar no SecureStore', e);
+    }
+}
+
+export async function getInfo(KEY) {
+    try {
+        return await SecureStore.getItemAsync(KEY);
+    } catch (e) {
+        console.error('Erro ao recuperar do SecureStore', e);
+        return null;
+    }
+}
+
+export async function deleteInfo(KEY) {
+    try {
+        await SecureStore.deleteItemAsync(KEY);
+    } catch (e) {
+        console.error('Erro ao deletar do SecureStore', e);
     }
 }

@@ -6,11 +6,32 @@ import {
   StyleSheet,
   ScrollView,
 } from 'react-native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+
+import { getInfo, decodeToken } from 'utils/keycloak'; // ajuste o caminho se necessário
 
 export default function Settings() {
   const [lowFoodAlert, setLowFoodAlert] = useState(true);
   const [feedingNotification, setFeedingNotification] = useState(false);
+
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+
+  // Busca token e extrai dados do usuário
+  const getUserInfo = async () => {
+    const token = await getInfo('access_token');
+    if (!token) return;
+
+    const decoded = await decodeToken(token);
+    if (decoded) {
+      setName(decoded.given_name || decoded.name || '');
+      setEmail(decoded.email || decoded.preferred_username || '');
+    }
+  };
+
+  useEffect(() => {
+    getUserInfo();
+  }, []);
 
   return (
     <ScrollView style={styles.container}>
@@ -48,7 +69,7 @@ export default function Settings() {
           <Text style={styles.inputLabel}>Nome</Text>
           <TextInput
             style={styles.input}
-            value="Pedro"
+            value={name}
             editable={false}
           />
         </View>
@@ -57,7 +78,7 @@ export default function Settings() {
           <Text style={styles.inputLabel}>Email</Text>
           <TextInput
             style={styles.input}
-            value="pedro@gmail.com"
+            value={email}
             editable={false}
           />
         </View>
@@ -65,6 +86,9 @@ export default function Settings() {
     </ScrollView>
   );
 }
+
+// styles... (mantém igual)
+
 
 const styles = StyleSheet.create({
   container: {
