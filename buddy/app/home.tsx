@@ -13,6 +13,8 @@ import {
 import { useState, useEffect } from 'react';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { getInfo, decodeToken } from '../utils/keycloak';
+import { listTable } from '../utils/database';
 
 export default function Home() {
   const router = useRouter();
@@ -22,27 +24,24 @@ export default function Home() {
   const [mediumOn, setMediumOn] = useState(true);
   const [largeOn, setLargeOn] = useState(false);
 
-  const [rotinas, setRotinas] = useState([
-    { id: 1, nome: 'Rotina 1' },
-    { id: 2, nome: 'Rotina viagem' },
-  ]);
+  const [rotinas, setRotinas] = useState([]);
 
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editedRoutineName, setEditedRoutineName] = useState('');
-  const [currentEditingRoutineId, setCurrentEditingRoutineId] = useState<number | null>(null);
+  const [currentEditingRoutineId, setCurrentEditingRoutineId] = useState(null);
 
   const handleDispense = () => {
     console.log('Comida dispensada!');
   };
 
-  const handleRoutinePress = (rotina: { id: number; nome: string }) => {
+  const handleRoutinePress = (rotina) => {
     router.push({
       pathname: '/criarRotinas',
       params: { routineName: rotina.nome },
     });
   };
 
-  const handleEditRoutine = (id: number, nome: string) => {
+  const handleEditRoutine = (id, nome) => {
     setCurrentEditingRoutineId(id);
     setEditedRoutineName(nome);
     setIsModalVisible(true);
@@ -60,11 +59,35 @@ export default function Home() {
     }
   };
 
-  // Quando retornar da tela de criação, adiciona nova rotina se existir
+  useEffect(() => {
+    const fetchUserRoutines = async () => {
+      try {
+        const token = await getInfo("access_token");
+        const decoded = await decodeToken(token);
+        const userId = decoded.sub;
+
+        const result = await listTable('rotines', { user_id: userId });
+
+        if (result.success) {
+          console.log("rotines");
+          const fetched = result.data.map((r) => ({
+            id: r.id,
+            nome: r.routine_name
+          }));
+          setRotinas(fetched);
+        }
+      } catch (error) {
+        console.error("Erro ao carregar rotinas do usuário:", error);
+      }
+    };
+
+    fetchUserRoutines();
+  }, []);
+
   useEffect(() => {
     if (routine) {
       try {
-        const newRoutine = JSON.parse(routine as string);
+        const newRoutine = JSON.parse(routine);
         if (newRoutine?.name) {
           setRotinas((prev) => [...prev, { id: Date.now(), nome: newRoutine.name }]);
         }
@@ -101,12 +124,9 @@ export default function Home() {
         resizeMode="cover"
       />
 
+      <Text style={styles.imageLabel}>Comida Média Dispensada</Text>
+      <Text style={styles.success}>SUCESSO</Text>
 
-
-      <Text style={styles.imageLabel}>MEDIUM FOOD DISPENSED</Text>
-      <Text style={styles.success}>success</Text>
-
-      {/* Botão Criar Rotina */}
       <TouchableOpacity
         style={styles.createRoutineButton}
         onPress={() => router.push('/criarRotinas')}
@@ -114,7 +134,6 @@ export default function Home() {
         <Text style={styles.createRoutineText}>Criar Rotina</Text>
       </TouchableOpacity>
 
-      {/* Lista de Rotinas */}
       {rotinas.map((rotina) => (
         <TouchableOpacity
           key={rotina.id}
@@ -129,7 +148,6 @@ export default function Home() {
         </TouchableOpacity>
       ))}
 
-      {/* Modal para editar nome */}
       <Modal
         visible={isModalVisible}
         animationType="slide"
@@ -158,7 +176,7 @@ export default function Home() {
   );
 }
 
-function SliderRow({ label, active, onToggle }: { label: string; active: boolean; onToggle: (val: boolean) => void }) {
+function SliderRow({ label, active, onToggle }) {
   const largura = active ? '70%' : '30%';
   return (
     <View style={styles.sliderRow}>
@@ -196,6 +214,7 @@ function BottomNav() {
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 15, backgroundColor: '#fff' },

@@ -1,6 +1,9 @@
+const BASE_URL = "http://192.168.0.29"
+
 export const URLS = {
-    list: "http://192.168.0.29:5003/api/list",
-    keycloak: "http://192.168.0.29:8080", // URL DO KEY CLOAK' 192.168.xx
+    list: `${BASE_URL}:5003/api/list`,
+    keycloak: `${BASE_URL}:8080`, // URL DO KEYCLOAK 192.168.x.xx
+    register: `${BASE_URL}:5000/api/register`
 } 
 
 export const KC = {

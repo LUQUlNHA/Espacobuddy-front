@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Picker } from '@react-native-picker/picker';
-import { listTable } from '../utils/database';
+import { listTable, register } from '../utils/database';
 import { getInfo, decodeToken } from '../utils/keycloak';
 
 export default function CreateRoutine() {
@@ -67,19 +67,33 @@ export default function CreateRoutine() {
 
   const time = `${hour}:${minute} ${amPm}`;
 
-  const handleSave = () => {
+  const to24HourFormat = (hour: string, minute: string, amPm: 'AM' | 'PM') => {
+    let h = parseInt(hour, 10);
+    if (amPm === 'PM' && h < 12) h += 12;
+    if (amPm === 'AM' && h === 12) h = 0;
+    return `${h.toString().padStart(2, '0')}:${minute}`;
+  };
+
+  const handleSave = async () => {
+    const schedule_time = to24HourFormat(hour, minute, amPm);
+
     const newRoutine = {
-      deviceId: selectedDevice,
-      name: routineNameState,
-      time,
-      portionSize,
-      notificationsEnabled,
+      routine_name: routineNameState,
+      feeder_id: selectedDevice,
+      schedule_time: schedule_time,
+      portion_size: portionSize,
     };
 
-    router.replace({
-      pathname: '/home',
-      params: { routine: JSON.stringify(newRoutine) },
-    });
+    const result = await register('rotines', newRoutine);
+
+    if (result.success) {
+      router.replace({
+        pathname: '/home',
+        params: { routine: JSON.stringify(newRoutine) },
+      });
+    } else {
+      alert('Erro ao salvar: ' + result.error);
+    }
   };
 
   const hours = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'));

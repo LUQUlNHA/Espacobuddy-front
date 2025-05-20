@@ -26,7 +26,6 @@ export default function DevicePairing() {
         const result = await listTable("user_feeders", { user_id: userId });
   
         const devices = result.data.map((entry, index) => {
-          const feederData = result.foreign_values.feeder_id.values[index];
           const feeder = {
             id: entry.feeder_id,
             nickname: entry.nickname,

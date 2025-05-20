@@ -32,3 +32,32 @@ export async function listTable(tableName, filters = {}) {
         throw error;
     }
 }
+
+export async function register(tableName, fields) {
+    try {
+        const response = await fetch(URLS.register, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                table_name: tableName,
+                fields: fields,
+            }),
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            console.log('Registro feito com sucesso!', result);
+            return { success: true, message: 'Registro realizado com sucesso!' };
+        } else {
+            console.error('Erro ao registrar:', result.error);
+            return { success: false, error: result.error || 'Erro desconhecido.' };
+        }
+
+    } catch (error) {
+        console.error('Erro ao enviar os dados:', error);
+        return { success: false, error: 'Erro ao enviar os dados. Tente novamente mais tarde.' };
+    }
+}
