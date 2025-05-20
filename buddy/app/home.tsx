@@ -176,22 +176,22 @@ function BottomNav() {
     <View style={styles.bottomNav}>
       <TouchableOpacity style={styles.navItem} onPress={() => router.push('/home')}>
         <Ionicons name="home" size={24} color="#008080" />
-        <Text>Home</Text>
+        <Text>Início</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.navItem} onPress={() => router.push('/manual')}>
         <Ionicons name="fast-food-outline" size={24} />
-        <Text>Feed</Text>
+        <Text>Alimentar</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.navItem} onPress={() => router.push('/history')}>
         <Ionicons name="time-outline" size={24} />
-        <Text>History</Text>
+        <Text>Histórico</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.navItem} onPress={() => router.push('/settings')}>
         <Ionicons name="settings-outline" size={24} />
-        <Text>Settings</Text>
+        <Text>Ajustes</Text>
       </TouchableOpacity>
     </View>
   );

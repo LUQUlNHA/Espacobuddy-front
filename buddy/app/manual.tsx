@@ -6,11 +6,42 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
+import { useEffect, useState } from 'react';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { decodeToken, getInfo } from '../utils/keycloak';
+import { listTable } from '../utils/database';
 
 export default function DevicePairing() {
   const router = useRouter();
+  const [devices, setDevices] = useState([]);
+
+  useEffect(() => {
+    const fetchDevices = async () => {
+      try {
+        const token = await getInfo("access_token");
+        const decodedToken = await decodeToken(token);
+        const userId = decodedToken.sub;
+  
+        const result = await listTable("user_feeders", { user_id: userId });
+  
+        const devices = result.data.map((entry, index) => {
+          const feederData = result.foreign_values.feeder_id.values[index];
+          const feeder = {
+            id: entry.feeder_id,
+            nickname: entry.nickname,
+          };
+          return feeder;
+        });
+  
+        setDevices(devices);
+      } catch (err) {
+        console.error("Erro ao buscar dispositivos:", err);
+      }
+    };
+  
+    fetchDevices();
+  }, []);
 
   return (
     <ScrollView style={styles.container}>
@@ -29,18 +60,19 @@ export default function DevicePairing() {
         </View>
       </View>
 
-      {/* Dispositivo Emparelhado */}
-      <View style={styles.deviceBox}>
-        <Image
-          source={require('../assets/images/alimentador.jpeg')}
-          style={styles.deviceImage}
-        />
-        <View style={styles.deviceInfo}>
-          <Text style={styles.deviceName}>Alimentador</Text>
-          <Text style={styles.deviceStatus}>Emparelhado</Text>
+      {/* Lista dos dispositivos emparelhados */}
+      {devices.map((device, index) => (
+        <View style={styles.deviceBox} key={device.id}>
+          <Image
+            source={require('../assets/images/alimentador.jpeg')}
+            style={styles.deviceImage}
+          />
+          <View style={styles.deviceInfo}>
+            <Text style={styles.deviceName}>{device.nickname || `Alimentador ${index + 1}`}</Text>
+          </View>
+          <MaterialIcons name="menu" size={24} />
         </View>
-        <MaterialIcons name="menu" size={24} />
-      </View>
+      ))}
 
       {/* Botão Adicionar Novo */}
       <TouchableOpacity style={styles.addBox}>

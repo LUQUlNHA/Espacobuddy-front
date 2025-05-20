@@ -8,8 +8,12 @@ import {
   Switch,
   ScrollView,
   TextInput,
+  Platform
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { Picker } from '@react-native-picker/picker';
+import { listTable } from '../utils/database';
+import { getInfo, decodeToken } from '../utils/keycloak';
 
 export default function CreateRoutine() {
   const router = useRouter();
@@ -23,16 +27,49 @@ export default function CreateRoutine() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
 
+  const [devices, setDevices] = useState<any[]>([]);
+  const [selectedDevice, setSelectedDevice] = useState<string>('');
+
   useEffect(() => {
     if (typeof routineName === 'string') {
       setRoutineNameState(routineName);
     }
   }, [routineName]);
 
+  useEffect(() => {
+    const fetchDevices = async () => {
+      try {
+        const token = await getInfo("access_token");
+        const decodedToken = await decodeToken(token);
+        const userId = decodedToken.sub;
+
+        const result = await listTable("user_feeders", { user_id: userId });
+
+        const devices = result.data.map((entry, index) => ({
+          id: entry.feeder_id,
+          nickname: entry.nickname || `Alimentador ${index + 1}`,
+          linkedAt: entry.created_at,
+        }));
+
+        console.log("Dispositivos carregados:", devices);
+
+        setDevices(devices);
+        if (devices.length > 0) {
+          setSelectedDevice(devices[0].id.toString());
+        }
+      } catch (err) {
+        console.error("Erro ao buscar dispositivos:", err);
+      }
+    };
+
+    fetchDevices();
+  }, []);
+
   const time = `${hour}:${minute} ${amPm}`;
 
   const handleSave = () => {
     const newRoutine = {
+      deviceId: selectedDevice,
       name: routineNameState,
       time,
       portionSize,
@@ -50,17 +87,41 @@ export default function CreateRoutine() {
 
   return (
     <View style={styles.container}>
+      <Text style={styles.subtitle}>Selecione o alimentador</Text>
+      <View style={styles.pickerWrapper}>
+        <Picker
+          selectedValue={selectedDevice || (devices[0]?.id.toString() ?? '')}
+          onValueChange={(itemValue) => {
+            console.log('Selecionado:', itemValue);
+            setSelectedDevice(itemValue);
+          }}
+          enabled={devices.length > 0}
+          style={styles.picker}
+          itemStyle={styles.pickerItem}
+          mode="dropdown"
+        >
+          {devices.map((device) => (
+            <Picker.Item
+              key={device.id}
+              label={device.nickname || `Alimentador`}
+              value={device.id.toString()}
+              color='#000'
+            />
+          ))}
+        </Picker>
+      </View>
+
       <Text style={styles.subtitle}>Nome da rotina</Text>
       <TextInput
         style={styles.input}
         placeholder="Digite o nome da rotina"
         value={routineNameState}
         onChangeText={setRoutineNameState}
+        editable={!!selectedDevice}
       />
 
       <Text style={styles.title}>Horário</Text>
-
-      <TouchableOpacity style={styles.timeBox} onPress={() => setModalVisible(true)}>
+      <TouchableOpacity style={styles.timeBox} onPress={() => setModalVisible(true)} disabled={!selectedDevice}>
         <Text style={styles.timeText}>{time}</Text>
       </TouchableOpacity>
 
@@ -111,6 +172,7 @@ export default function CreateRoutine() {
             key={size}
             style={[styles.portionBtn, portionSize === size && styles.portionSelected]}
             onPress={() => setPortionSize(size as any)}
+            disabled={!selectedDevice}
           >
             <Text style={{ color: portionSize === size ? '#fff' : '#00B894' }}>{size}</Text>
           </TouchableOpacity>
@@ -118,11 +180,15 @@ export default function CreateRoutine() {
       </View>
 
       <View style={styles.switchContainer}>
-        <Text style={styles.subtitle}>Notificações ativadas</Text>
-        <Switch value={notificationsEnabled} onValueChange={setNotificationsEnabled} />
+        <Text style={styles.subtitle}>Notificações Ativadas</Text>
+        <Switch value={notificationsEnabled} onValueChange={setNotificationsEnabled} disabled={!selectedDevice} />
       </View>
 
-      <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+      <TouchableOpacity
+        style={[styles.saveButton, { opacity: selectedDevice ? 1 : 0.4 }]}
+        onPress={handleSave}
+        disabled={!selectedDevice}
+      >
         <Text style={styles.saveText}>Salvar Configuração</Text>
       </TouchableOpacity>
     </View>
@@ -139,6 +205,36 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     padding: 12,
     marginBottom: 20,
+    fontSize: 16,
+  },
+
+  pickerWrapper: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 6,
+    marginBottom: 20,
+    backgroundColor: '#f0f0f0',
+    height: Platform.OS === 'ios' ? 100 : undefined,
+    overflow: 'hidden',
+    justifyContent: 'center',
+  },
+
+  picker: {
+    flex: 1,
+    paddingHorizontal: 10,
+    color: '#000',
+    backgroundColor: 'transparent', // pode ser removido, mas ajuda no Android
+    ...Platform.select({
+      ios: {
+        marginTop: -80, // visualmente alinha melhor no iOS
+      },
+      android: {
+        fontSize: 16,
+      },
+    }),
+  },
+
+  pickerItem: {
     fontSize: 16,
   },
   timeBox: {
@@ -198,6 +294,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     textAlign: 'center',
     paddingVertical: 10,
+    color: "#000",
   },
   selectedItem: {
     backgroundColor: '#00B894',

@@ -1,11 +1,12 @@
 import * as SecureStore from 'expo-secure-store';
+import { URLS, KC } from './enviroment';
 
 // Mudar sempre aqui
-const KEYCLOAK_HOST = 'http://192.168.0.29:8080'; 
-const REALM = 'espaco-buddy';
-const CLIENT_ID = 'espaco-buddy-client';
-const CLIENT_SECRET = '9wYxwmnwjaAUt31lyAZYcyTT6xuz9UIt';
-const CLIENT_SECRET_ADMIN = 's2vNJ36LVkSFyrwQB6g8WINGBiknRGpC';
+const KEYCLOAK_HOST = URLS.keycloak; 
+const REALM = KC.realm;
+const CLIENT_ID = KC.client_id;
+const CLIENT_SECRET = KC.client_secret;
+const CLIENT_SECRET_ADMIN = KC.client_secret_admin;
 
 // ----- LOGIN COM CREDENCIAIS -----
 export async function loginWithCredentials(email, password) {
@@ -27,6 +28,8 @@ export async function loginWithCredentials(email, password) {
     if (!response.ok) {
         return { success: false, message: data.error_description || 'Usuário ou senha inválidos' };
     }
+
+    console.log(await decodeToken(data.access_token));
 
     await saveInfo("access_token", data.access_token);
     await saveInfo("refresh_token", data.refresh_token);

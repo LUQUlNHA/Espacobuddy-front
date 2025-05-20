@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { useEffect, useState } from 'react';
 
-import { getInfo, decodeToken } from 'utils/keycloak'; // ajuste o caminho se necessário
+import { getInfo, decodeToken } from '../utils/keycloak'; // ajuste o caminho se necessário
 
 export default function Settings() {
   const [lowFoodAlert, setLowFoodAlert] = useState(true);

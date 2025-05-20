@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { loginWithCredentials } from '../utils/keycloak.js'; // ajuste o caminho
 import { WebView } from 'react-native-webview';
+import { URLS } from '../utils/enviroment.js';
 
 export default function Login() {
   const router = useRouter();
@@ -32,7 +33,7 @@ export default function Login() {
   if (showWebview) {
     return (
       <WebView
-        source={{ uri: 'http://192.168.0.29:8080/realms/espaco-buddy/account' }}
+        source={{ uri: `${URLS.keycloak}/realms/espaco-buddy/account` }}
         style={{ flex: 1 }}
       />
     );
