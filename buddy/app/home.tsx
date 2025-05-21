@@ -66,10 +66,10 @@ export default function Home() {
         const decoded = await decodeToken(token);
         const userId = decoded.sub;
 
-        const result = await listTable('rotines', { user_id: userId });
+        const result = await listTable('routines', { user_id: userId });
 
         if (result.success) {
-          console.log("rotines");
+          console.log("routines");
         
           const fetched = result.data.map((r) => ({
             id: r.id,

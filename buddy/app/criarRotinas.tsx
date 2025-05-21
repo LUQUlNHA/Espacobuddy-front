@@ -91,7 +91,7 @@ export default function CreateRoutine() {
       user_id: userId
     };
 
-    const result = await register('rotines', newRoutine);
+    const result = await register('routines', newRoutine);
 
     if (result.success) {
       router.replace({
@@ -104,7 +104,7 @@ export default function CreateRoutine() {
   };
 
   const hours = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'));
-  const minutes = ['00', '15', '30', '45'];
+  const minutes = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
 
   return (
     <View style={styles.container}>
