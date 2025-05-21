@@ -14,7 +14,7 @@ import { useState, useEffect } from 'react';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { getInfo, decodeToken } from '../utils/keycloak';
-import { listTable } from '../utils/database';
+import { listTable, updateRoutineName } from '../utils/database';
 
 export default function Home() {
   const router = useRouter();
@@ -47,13 +47,22 @@ export default function Home() {
     setIsModalVisible(true);
   };
 
-  const handleSaveRoutine = () => {
+  const handleSaveRoutine = async () => {
     if (editedRoutineName.trim()) {
-      setRotinas((prev) =>
-        prev.map((r) =>
-          r.id === currentEditingRoutineId ? { ...r, nome: editedRoutineName } : r
-        )
-      );
+      try {
+        const result = await updateRoutineName(currentEditingRoutineId, editedRoutineName);
+        if (result.success) {
+          setRotinas((prev) =>
+            prev.map((r) =>
+              r.id === currentEditingRoutineId ? { ...r, nome: editedRoutineName } : r
+            )
+          );
+        } else {
+          console.error('Erro ao salvar rotina:', result.message);
+        }
+      } catch (err) {
+        console.error('Erro ao atualizar rotina:', err);
+      }
       setIsModalVisible(false);
       setEditedRoutineName('');
     }
@@ -69,10 +78,9 @@ export default function Home() {
         const result = await listTable('rotines', { user_id: userId });
 
         if (result.success) {
-          console.log("rotines");
           const fetched = result.data.map((r) => ({
             id: r.id,
-            nome: r.routine_name
+            nome: r.routine_name,
           }));
           setRotinas(fetched);
         }
@@ -214,7 +222,6 @@ function BottomNav() {
     </View>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 15, backgroundColor: '#fff' },

@@ -1,14 +1,9 @@
 import {
-  View,
-  Text,
-  StyleSheet,
-  Image,
-  TouchableOpacity,
-  ScrollView,
+  View, Text, StyleSheet, Image, TouchableOpacity, ScrollView,
 } from 'react-native';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { decodeToken, getInfo } from '../utils/keycloak';
 import { listTable } from '../utils/database';
 
@@ -16,40 +11,46 @@ export default function DevicePairing() {
   const router = useRouter();
   const [devices, setDevices] = useState([]);
 
-  useEffect(() => {
-    const fetchDevices = async () => {
-      try {
-        const token = await getInfo("access_token");
-        const decodedToken = await decodeToken(token);
-        const userId = decodedToken.sub;
-  
-        const result = await listTable("user_feeders", { user_id: userId });
-  
-        const devices = result.data.map((entry, index) => {
-          const feeder = {
-            id: entry.feeder_id,
-            nickname: entry.nickname,
-          };
-          return feeder;
-        });
-  
-        setDevices(devices);
-      } catch (err) {
-        console.error("Erro ao buscar dispositivos:", err);
+  const fetchDevices = async () => {
+    try {
+      const token = await getInfo('access_token');
+      if (!token) {
+        console.warn('Token não encontrado');
+        return;
       }
-    };
-  
-    fetchDevices();
-  }, []);
+
+      const decodedToken = await decodeToken(token);
+      const userId = decodedToken.sub;
+
+      const result = await listTable('user_feeders', { user_id: userId });
+
+      if (!result?.data) {
+        console.warn('Nenhum dado retornado de user_feeders');
+        setDevices([]);
+        return;
+      }
+
+      const devices = result.data.map((entry, index) => ({
+        id: entry.feeder_id || index,
+        nickname: entry.nickname,
+      }));
+
+      setDevices(devices);
+    } catch (err) {
+      console.error('Erro ao buscar dispositivos:', err);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchDevices();
+    }, [])
+  );
 
   return (
     <ScrollView style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} />
-        </TouchableOpacity>
-        <Text style={styles.title}>Emparelhar Dispositivo</Text>
+        <Text style={styles.title}>Dispositivos</Text>
         <View style={styles.headerRight}>
           <Ionicons name="bar-chart-outline" size={20} style={styles.icon} />
           <Image
@@ -59,7 +60,23 @@ export default function DevicePairing() {
         </View>
       </View>
 
-      {/* Lista dos dispositivos emparelhados */}
+      <TouchableOpacity
+        style={[styles.addBox, { marginTop: 20, backgroundColor: '#e0f7fa' }]}
+        onPress={() => router.push('/cadastro-alimentador')}
+      >
+        <Ionicons name="create-outline" size={24} color="#00796b" />
+        <View style={styles.addInfo}>
+          <Text style={[styles.addText, { color: '#00796b' }]}>Cadastrar Alimentador</Text>
+        </View>
+        <Ionicons name="arrow-forward-circle-outline" size={24} color="#00796b" />
+      </TouchableOpacity>
+
+      {devices.length === 0 && (
+        <Text style={{ textAlign: 'center', marginTop: 20, color: '#999' }}>
+          Nenhum alimentador cadastrado ainda.
+        </Text>
+      )}
+
       {devices.map((device, index) => (
         <View style={styles.deviceBox} key={device.id}>
           <Image
@@ -73,14 +90,6 @@ export default function DevicePairing() {
         </View>
       ))}
 
-      {/* Botão Adicionar Novo */}
-      <TouchableOpacity style={styles.addBox}>
-        <Ionicons name="image-outline" size={32} color="#ccc" />
-        <View style={styles.addInfo}>
-          <Text style={styles.addText}>Adicionar aparelho</Text>
-        </View>
-        <Ionicons name="add-circle-outline" size={24} />
-      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -93,7 +102,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20
   },
   title: {
-    fontSize: 16, fontWeight: 'bold'
+    fontSize: 22, fontWeight: 'bold'
   },
   headerRight: {
     flexDirection: 'row', alignItems: 'center'
@@ -120,9 +129,6 @@ const styles = StyleSheet.create({
   },
   deviceName: {
     fontWeight: 'bold'
-  },
-  deviceStatus: {
-    color: '#888'
   },
   addBox: {
     flexDirection: 'row',
