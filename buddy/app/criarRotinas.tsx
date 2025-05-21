@@ -75,6 +75,12 @@ export default function CreateRoutine() {
   };
 
   const handleSave = async () => {
+    const token = await getInfo("access_token");
+
+    const decodedToken = await decodeToken(token);
+
+    const userId = decodedToken.sub;
+
     const schedule_time = to24HourFormat(hour, minute, amPm);
 
     const newRoutine = {
@@ -82,6 +88,7 @@ export default function CreateRoutine() {
       feeder_id: selectedDevice,
       schedule_time: schedule_time,
       portion_size: portionSize,
+      user_id: userId
     };
 
     const result = await register('rotines', newRoutine);

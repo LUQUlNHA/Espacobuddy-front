@@ -70,6 +70,7 @@ export default function Home() {
 
         if (result.success) {
           console.log("rotines");
+        
           const fetched = result.data.map((r) => ({
             id: r.id,
             nome: r.routine_name
@@ -88,8 +89,8 @@ export default function Home() {
     if (routine) {
       try {
         const newRoutine = JSON.parse(routine);
-        if (newRoutine?.name) {
-          setRotinas((prev) => [...prev, { id: Date.now(), nome: newRoutine.name }]);
+        if (newRoutine?.routine_name) {
+          setRotinas((prev) => [...prev, { id: newRoutine.id, nome: newRoutine.routine_name }]);
         }
       } catch (err) {
         console.error('Erro ao adicionar nova rotina:', err);
