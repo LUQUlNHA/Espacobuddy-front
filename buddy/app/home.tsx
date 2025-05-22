@@ -20,20 +20,25 @@ export default function Home() {
   const router = useRouter();
   const { routine } = useLocalSearchParams();
 
+  // Estados para controle de switches de porção
   const [smallOn, setSmallOn] = useState(false);
   const [mediumOn, setMediumOn] = useState(true);
   const [largeOn, setLargeOn] = useState(false);
 
+  // Lista de rotinas do usuário
   const [rotinas, setRotinas] = useState([]);
 
+  // Controle do modal de edição de rotina
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editedRoutineName, setEditedRoutineName] = useState('');
   const [currentEditingRoutineId, setCurrentEditingRoutineId] = useState(null);
 
+  // Simula a dispensação de comida
   const handleDispense = () => {
     console.log('Comida dispensada!');
   };
 
+  // Ao tocar em uma rotina existente, abre tela para editar
   const handleRoutinePress = (rotina) => {
     router.push({
       pathname: '/criarRotinas',
@@ -41,12 +46,14 @@ export default function Home() {
     });
   };
 
+  // Abre modal de edição com dados da rotina selecionada
   const handleEditRoutine = (id, nome) => {
     setCurrentEditingRoutineId(id);
     setEditedRoutineName(nome);
     setIsModalVisible(true);
   };
 
+  // Salva alteração de nome da rotina no estado
   const handleSaveRoutine = () => {
     if (editedRoutineName.trim()) {
       setRotinas((prev) =>
@@ -59,6 +66,7 @@ export default function Home() {
     }
   };
 
+  // Carrega rotinas do usuário ao montar o componente
   useEffect(() => {
     const fetchUserRoutines = async () => {
       try {
@@ -69,8 +77,6 @@ export default function Home() {
         const result = await listTable('routines', { user_id: userId });
 
         if (result.success) {
-          console.log("routines");
-        
           const fetched = result.data.map((r) => ({
             id: r.id,
             nome: r.routine_name
@@ -85,6 +91,7 @@ export default function Home() {
     fetchUserRoutines();
   }, []);
 
+  // Se houver nova rotina vinda da tela anterior, adiciona à lista
   useEffect(() => {
     if (routine) {
       try {
@@ -100,25 +107,30 @@ export default function Home() {
 
   return (
     <ScrollView style={styles.container}>
+      {/* Cabeçalho */}
       <View style={styles.header}>
         <Text style={styles.title}>Controle de Alimentação</Text>
         <Ionicons name="settings-outline" size={24} />
       </View>
 
+      {/* Campo de busca */}
       <TextInput
         style={styles.search}
         placeholder="Buscar por receitas..."
         placeholderTextColor="#999"
       />
 
+      {/* Botão de dispensar comida */}
       <TouchableOpacity style={styles.dispenseButton} onPress={handleDispense}>
         <Text style={styles.dispenseText}>Dispensar Comida</Text>
       </TouchableOpacity>
 
+      {/* Controles de porções */}
       <SliderRow label="Small" active={smallOn} onToggle={setSmallOn} />
       <SliderRow label="Medium" active={mediumOn} onToggle={setMediumOn} />
       <SliderRow label="Large" active={largeOn} onToggle={setLargeOn} />
 
+      {/* Imagem ilustrativa do alimentador */}
       <Image
         source={require('../assets/images/alimentador.jpeg')}
         style={styles.image}
@@ -128,6 +140,7 @@ export default function Home() {
       <Text style={styles.imageLabel}>Comida Média Dispensada</Text>
       <Text style={styles.success}>SUCESSO</Text>
 
+      {/* Navegar para criação de rotina */}
       <TouchableOpacity
         style={styles.createRoutineButton}
         onPress={() => router.push('/criarRotinas')}
@@ -135,6 +148,7 @@ export default function Home() {
         <Text style={styles.createRoutineText}>Criar Rotina</Text>
       </TouchableOpacity>
 
+      {/* Lista de rotinas do usuário */}
       {rotinas.map((rotina) => (
         <TouchableOpacity
           key={rotina.id}
@@ -149,6 +163,7 @@ export default function Home() {
         </TouchableOpacity>
       ))}
 
+      {/* Modal de edição de rotina */}
       <Modal
         visible={isModalVisible}
         animationType="slide"
@@ -172,11 +187,13 @@ export default function Home() {
         </View>
       </Modal>
 
+      {/* Navegação inferior */}
       <BottomNav />
     </ScrollView>
   );
 }
 
+// Componente que representa um controle de porção com switch
 function SliderRow({ label, active, onToggle }) {
   const largura = active ? '70%' : '30%';
   return (
@@ -188,6 +205,7 @@ function SliderRow({ label, active, onToggle }) {
   );
 }
 
+// Componente de navegação inferior da aplicação
 function BottomNav() {
   const router = useRouter();
 
@@ -215,7 +233,6 @@ function BottomNav() {
     </View>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 15, backgroundColor: '#fff' },

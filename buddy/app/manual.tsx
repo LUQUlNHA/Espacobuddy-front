@@ -1,3 +1,4 @@
+// Importa componentes essenciais do React Native
 import {
   View,
   Text,
@@ -6,25 +7,38 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
+
+// Hooks do React
 import { useEffect, useState } from 'react';
+
+// Ícones da biblioteca Expo
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+
+// Hook de navegação da Expo Router
 import { useRouter } from 'expo-router';
+
+// Funções auxiliares para autenticação e acesso ao Keycloak
 import { decodeToken, getInfo } from '../utils/keycloak';
+
+// Função genérica para consultar o banco de dados
 import { listTable } from '../utils/database';
 
 export default function DevicePairing() {
-  const router = useRouter();
-  const [devices, setDevices] = useState([]);
+  const router = useRouter(); // Controle de navegação
+  const [devices, setDevices] = useState([]); // Lista de dispositivos emparelhados do usuário
 
+  // Carrega os dispositivos emparelhados assim que o componente monta
   useEffect(() => {
     const fetchDevices = async () => {
       try {
-        const token = await getInfo("access_token");
-        const decodedToken = await decodeToken(token);
-        const userId = decodedToken.sub;
-  
+        const token = await getInfo("access_token"); // Recupera o token JWT do armazenamento seguro
+        const decodedToken = await decodeToken(token); // Decodifica o token
+        const userId = decodedToken.sub; // Extrai o ID do usuário (campo `sub`)
+
+        // Busca alimentadores vinculados ao usuário no banco
         const result = await listTable("user_feeders", { user_id: userId });
-  
+
+        // Mapeia os resultados em um array de objetos com id e apelido
         const devices = result.data.map((entry, index) => {
           const feeder = {
             id: entry.feeder_id,
@@ -32,19 +46,19 @@ export default function DevicePairing() {
           };
           return feeder;
         });
-  
-        setDevices(devices);
+
+        setDevices(devices); // Atualiza o estado com os dispositivos encontrados
       } catch (err) {
         console.error("Erro ao buscar dispositivos:", err);
       }
     };
-  
+
     fetchDevices();
   }, []);
 
   return (
     <ScrollView style={styles.container}>
-      {/* Header */}
+      {/* Cabeçalho da tela com botão de voltar, título e avatar do usuário */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} />
@@ -59,7 +73,7 @@ export default function DevicePairing() {
         </View>
       </View>
 
-      {/* Lista dos dispositivos emparelhados */}
+      {/* Lista os dispositivos emparelhados com imagem e nome */}
       {devices.map((device, index) => (
         <View style={styles.deviceBox} key={device.id}>
           <Image
@@ -73,7 +87,7 @@ export default function DevicePairing() {
         </View>
       ))}
 
-      {/* Botão Adicionar Novo */}
+      {/* Botão para adicionar novo dispositivo */}
       <TouchableOpacity style={styles.addBox}>
         <Ionicons name="image-outline" size={32} color="#ccc" />
         <View style={styles.addInfo}>
@@ -85,6 +99,7 @@ export default function DevicePairing() {
   );
 }
 
+// Estilos para a interface
 const styles = StyleSheet.create({
   container: {
     flex: 1, padding: 15, backgroundColor: '#fff'
