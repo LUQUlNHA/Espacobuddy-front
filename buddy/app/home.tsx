@@ -25,7 +25,6 @@ export default function Home() {
   const [largeOn, setLargeOn] = useState(false);
 
   const [rotinas, setRotinas] = useState([]);
-
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editedRoutineName, setEditedRoutineName] = useState('');
   const [currentEditingRoutineId, setCurrentEditingRoutineId] = useState(null);
@@ -68,6 +67,12 @@ export default function Home() {
     }
   };
 
+  const toggleSize = (size) => {
+    setSmallOn(size === 'small');
+    setMediumOn(size === 'medium');
+    setLargeOn(size === 'large');
+  };
+
   useEffect(() => {
     const fetchUserRoutines = async () => {
       try {
@@ -106,91 +111,100 @@ export default function Home() {
   }, [routine]);
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Controle de Alimentação</Text>
-        <Ionicons name="settings-outline" size={24} />
-      </View>
+    <View style={styles.screen}>
+      <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Controle de Alimentação</Text>
+          <Ionicons name="settings-outline" size={24} />
+        </View>
 
-      <TextInput
-        style={styles.search}
-        placeholder="Buscar por receitas..."
-        placeholderTextColor="#999"
-      />
+        <TextInput
+          style={styles.search}
+          placeholder="Buscar por receitas..."
+          placeholderTextColor="#999"
+        />
 
-      <TouchableOpacity style={styles.dispenseButton} onPress={handleDispense}>
-        <Text style={styles.dispenseText}>Dispensar Comida</Text>
-      </TouchableOpacity>
-
-      <SliderRow label="Small" active={smallOn} onToggle={setSmallOn} />
-      <SliderRow label="Medium" active={mediumOn} onToggle={setMediumOn} />
-      <SliderRow label="Large" active={largeOn} onToggle={setLargeOn} />
-
-      <Image
-        source={require('../assets/images/alimentador.jpeg')}
-        style={styles.image}
-        resizeMode="cover"
-      />
-
-      <Text style={styles.imageLabel}>Comida Média Dispensada</Text>
-      <Text style={styles.success}>SUCESSO</Text>
-
-      <TouchableOpacity
-        style={styles.createRoutineButton}
-        onPress={() => router.push('/criarRotinas')}
-      >
-        <Text style={styles.createRoutineText}>Criar Rotina</Text>
-      </TouchableOpacity>
-
-      {rotinas.map((rotina) => (
-        <TouchableOpacity
-          key={rotina.id}
-          style={styles.routineItem}
-          onPress={() => handleRoutinePress(rotina)}
-        >
-          <Ionicons name="play-circle-outline" size={24} />
-          <Text style={styles.routineText}>{rotina.nome}</Text>
-          <TouchableOpacity onPress={() => handleEditRoutine(rotina.id, rotina.nome)}>
-            <MaterialIcons name="edit" size={20} />
-          </TouchableOpacity>
+        <TouchableOpacity style={styles.dispenseButton} onPress={handleDispense}>
+          <Text style={styles.dispenseText}>Dispensar Comida</Text>
         </TouchableOpacity>
-      ))}
 
-      <Modal
-        visible={isModalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setIsModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Editar Rotina</Text>
-            <TextInput
-              style={styles.modalInput}
-              value={editedRoutineName}
-              onChangeText={setEditedRoutineName}
-              placeholder="Digite o novo nome da rotina"
-            />
-            <View style={styles.modalButtons}>
-              <Button title="Cancelar" onPress={() => setIsModalVisible(false)} />
-              <Button title="Salvar" onPress={handleSaveRoutine} />
+        <SliderRow label="Small" active={smallOn} onPress={() => toggleSize('small')} />
+        <SliderRow label="Medium" active={mediumOn} onPress={() => toggleSize('medium')} />
+        <SliderRow label="Large" active={largeOn} onPress={() => toggleSize('large')} />
+
+        <Image
+          source={require('../assets/images/alimentador.jpeg')}
+          style={styles.image}
+          resizeMode="cover"
+        />
+
+        <Text style={styles.imageLabel}>Comida Média Dispensada</Text>
+        <Text style={styles.success}>SUCESSO</Text>
+
+        <TouchableOpacity
+          style={styles.createRoutineButton}
+          onPress={() => router.push('/criarRotinas')}
+        >
+          <Text style={styles.createRoutineText}>Criar Rotina</Text>
+        </TouchableOpacity>
+
+        {rotinas.map((rotina) => (
+          <TouchableOpacity
+            key={rotina.id}
+            style={styles.routineItem}
+            onPress={() => handleRoutinePress(rotina)}
+          >
+            <Ionicons name="play-circle-outline" size={24} />
+            <Text style={styles.routineText}>{rotina.nome}</Text>
+            <TouchableOpacity onPress={() => handleEditRoutine(rotina.id, rotina.nome)}>
+              <MaterialIcons name="edit" size={20} />
+            </TouchableOpacity>
+          </TouchableOpacity>
+        ))}
+
+        <Modal
+          visible={isModalVisible}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setIsModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Editar Rotina</Text>
+              <TextInput
+                style={styles.modalInput}
+                value={editedRoutineName}
+                onChangeText={setEditedRoutineName}
+                placeholder="Digite o novo nome da rotina"
+              />
+              <View style={styles.modalButtons}>
+                <Button title="Cancelar" onPress={() => setIsModalVisible(false)} />
+                <Button title="Salvar" onPress={handleSaveRoutine} />
+              </View>
             </View>
           </View>
-        </View>
-      </Modal>
+        </Modal>
+      </ScrollView>
 
       <BottomNav />
-    </ScrollView>
+    </View>
   );
 }
 
-function SliderRow({ label, active, onToggle }) {
-  const largura = active ? '70%' : '30%';
+function SliderRow({ label, active, onPress }) {
   return (
     <View style={styles.sliderRow}>
       <Text>{label}</Text>
-      <View style={[styles.bar, { width: largura }]} />
-      <Switch value={active} onValueChange={onToggle} />
+      <View
+        style={[
+          styles.bar,
+          {
+            width: active ? '70%' : '40%',
+            backgroundColor: active ? '#008080' : '#ccc',
+          },
+        ]}
+      />
+      <Switch value={active} onValueChange={onPress} />
     </View>
   );
 }
@@ -224,57 +238,72 @@ function BottomNav() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 15, backgroundColor: '#fff' },
+  screen: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  container: {
+    padding: 15,
+    paddingBottom: 80, // espaço extra para o BottomNav
+  },
   header: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10,
   },
   title: { fontSize: 18, fontWeight: 'bold' },
   search: {
-    backgroundColor: '#f0f0f0', borderRadius: 10, padding: 10, marginBottom: 15
+    backgroundColor: '#f0f0f0', borderRadius: 10, padding: 10, marginBottom: 15,
   },
   dispenseButton: {
-    backgroundColor: '#008080', padding: 15, borderRadius: 10, alignItems: 'center', marginBottom: 20
+    backgroundColor: '#008080', padding: 15, borderRadius: 10, alignItems: 'center', marginBottom: 20,
   },
   dispenseText: { color: '#fff', fontWeight: 'bold' },
   sliderRow: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10,
   },
   bar: {
-    height: 8, backgroundColor: '#ccc', borderRadius: 5, marginHorizontal: 10
+    height: 8, borderRadius: 5, marginHorizontal: 10,
   },
   image: {
-    width: '100%', height: 150, borderRadius: 10, marginTop: 15
+    width: '100%', height: 280, borderRadius: 10, marginTop: 15,
   },
   imageLabel: {
-    textAlign: 'center', marginTop: 5, fontWeight: '500'
+    textAlign: 'center', marginTop: 5, fontWeight: '500',
   },
   success: {
-    textAlign: 'center', color: 'green', marginBottom: 10
+    textAlign: 'center', color: 'green', marginBottom: 10,
   },
   createRoutineButton: {
-    borderColor: '#008080', borderWidth: 1, borderRadius: 10, padding: 10, alignItems: 'center', marginVertical: 10
+    borderColor: '#008080', borderWidth: 1, borderRadius: 10, padding: 10, alignItems: 'center', marginVertical: 10,
   },
   createRoutineText: { color: '#008080', fontWeight: 'bold' },
   routineItem: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#eee'
+    paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#eee',
   },
   routineText: { flex: 1, marginHorizontal: 10 },
   bottomNav: {
-    flexDirection: 'row', justifyContent: 'space-around', padding: 10, borderTopWidth: 1, borderTopColor: '#ccc', marginTop: 5
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    padding: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#ccc',
+    backgroundColor: '#fff',
+    position: 'absolute',
+    bottom: 0,
+    width: '100%',
   },
   navItem: { alignItems: 'center' },
   modalOverlay: {
-    flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0, 0, 0, 0.5)'
+    flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
-    width: 300, padding: 20, backgroundColor: '#fff', borderRadius: 10, alignItems: 'center'
+    width: 300, padding: 20, backgroundColor: '#fff', borderRadius: 10, alignItems: 'center',
   },
   modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10 },
   modalInput: {
-    width: '100%', padding: 10, borderWidth: 1, borderRadius: 10, marginBottom: 20
+    width: '100%', padding: 10, borderWidth: 1, borderRadius: 10, marginBottom: 20,
   },
   modalButtons: {
-    flexDirection: 'row', justifyContent: 'space-between', width: '100%'
-  }
+    flexDirection: 'row', justifyContent: 'space-between', width: '100%',
+  },
 });
