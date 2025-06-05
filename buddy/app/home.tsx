@@ -99,13 +99,15 @@ export default function Home() {
 
   useEffect(() => {
     if (routine) {
-      try {
-        const newRoutine = JSON.parse(routine);
-        if (newRoutine?.name) {
-          setRotinas((prev) => [...prev, { id: Date.now(), nome: newRoutine.name }]);
+      const routineName = routine?.routineName || routine.name || routine;
+      if (routineName) {
+        const alreadyExists = rotinas.some((r) => r.nome === routineName);
+        if (!alreadyExists) {
+          setRotinas((prev) => [
+            ...prev,
+            { id: Date.now(), nome: routineName },
+          ]);
         }
-      } catch (err) {
-        console.error('Erro ao adicionar nova rotina:', err);
       }
     }
   }, [routine]);
@@ -147,20 +149,27 @@ export default function Home() {
         >
           <Text style={styles.createRoutineText}>Criar Rotina</Text>
         </TouchableOpacity>
-
         {rotinas.map((rotina) => (
-          <TouchableOpacity
-            key={rotina.id}
-            style={styles.routineItem}
-            onPress={() => handleRoutinePress(rotina)}
-          >
-            <Ionicons name="play-circle-outline" size={24} />
-            <Text style={styles.routineText}>{rotina.nome}</Text>
-            <TouchableOpacity onPress={() => handleEditRoutine(rotina.id, rotina.nome)}>
-              <MaterialIcons name="edit" size={20} />
-            </TouchableOpacity>
-          </TouchableOpacity>
+          <View key={rotina.id} style={styles.routineCard}>
+            <View style={styles.routineInfo}>
+              <Text style={styles.routineName}>{rotina.name}</Text>
+              <Text style={styles.routineDetail}>⏰ {rotina.time}</Text>
+              <Text style={styles.routineDetail}>🍽️ Porção: {rotina.portionSize}</Text>
+              <Text style={styles.routineDetail}>
+                🔔 Notificações: {rotina.notificationsEnabled ? 'Ativadas' : 'Desativadas'}
+              </Text>
+            </View>
+            <View style={styles.routineActions}>
+              <TouchableOpacity onPress={() => handleRoutinePress(rotina)}>
+                <Ionicons name="play-circle-outline" size={28} color="#008080" />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => handleEditRoutine(rotina.id, rotina.name)}>
+                <MaterialIcons name="edit" size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
+          </View>
         ))}
+
 
         <Modal
           visible={isModalVisible}
@@ -244,7 +253,7 @@ const styles = StyleSheet.create({
   },
   container: {
     padding: 15,
-    paddingBottom: 80, // espaço extra para o BottomNav
+    paddingBottom: 80,
   },
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10,
@@ -292,6 +301,43 @@ const styles = StyleSheet.create({
     bottom: 0,
     width: '100%',
   },
+
+  routineCard: {
+  backgroundColor: '#fff',
+  borderRadius: 12,
+  padding: 16,
+  marginBottom: 12,
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.1,
+  shadowRadius: 4,
+  elevation: 3,
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'flex-start',
+},
+routineInfo: {
+  flex: 1,
+},
+routineName: {
+  fontSize: 16,
+  fontWeight: 'bold',
+  marginBottom: 4,
+  color: '#333',
+},
+routineDetail: {
+  fontSize: 14,
+  color: '#555',
+  marginBottom: 2,
+},
+routineActions: {
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: 8,
+},
+
+
   navItem: { alignItems: 'center' },
   modalOverlay: {
     flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0, 0, 0, 0.5)',

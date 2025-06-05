@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -8,18 +8,15 @@ import {
   Switch,
   ScrollView,
   TextInput,
-  Platform
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { Picker } from '@react-native-picker/picker';
-import { listTable, register } from '../utils/database';
-import { getInfo, decodeToken } from '../utils/keycloak';
 
 export default function CreateRoutine() {
   const router = useRouter();
-  const { routineName } = useLocalSearchParams();
 
-  const [routineNameState, setRoutineNameState] = useState('');
+  const [selectedFeeder, setSelectedFeeder] = useState('');
+  const [routineName, setRoutineName] = useState('');
   const [hour, setHour] = useState('10');
   const [minute, setMinute] = useState('00');
   const [amPm, setAmPm] = useState<'AM' | 'PM'>('AM');
@@ -27,73 +24,21 @@ export default function CreateRoutine() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
 
-  const [devices, setDevices] = useState<any[]>([]);
-  const [selectedDevice, setSelectedDevice] = useState<string>('');
-
-  useEffect(() => {
-    if (typeof routineName === 'string') {
-      setRoutineNameState(routineName);
-    }
-  }, [routineName]);
-
-  useEffect(() => {
-    const fetchDevices = async () => {
-      try {
-        const token = await getInfo("access_token");
-        const decodedToken = await decodeToken(token);
-        const userId = decodedToken.sub;
-
-        const result = await listTable("user_feeders", { user_id: userId });
-
-        const devices = result.data.map((entry, index) => ({
-          id: entry.feeder_id,
-          nickname: entry.nickname || `Alimentador ${index + 1}`,
-          linkedAt: entry.created_at,
-        }));
-
-        console.log("Dispositivos carregados:", devices);
-
-        setDevices(devices);
-        if (devices.length > 0) {
-          setSelectedDevice(devices[0].id.toString());
-        }
-      } catch (err) {
-        console.error("Erro ao buscar dispositivos:", err);
-      }
-    };
-
-    fetchDevices();
-  }, []);
-
   const time = `${hour}:${minute} ${amPm}`;
 
-  const to24HourFormat = (hour: string, minute: string, amPm: 'AM' | 'PM') => {
-    let h = parseInt(hour, 10);
-    if (amPm === 'PM' && h < 12) h += 12;
-    if (amPm === 'AM' && h === 12) h = 0;
-    return `${h.toString().padStart(2, '0')}:${minute}`;
-  };
-
-  const handleSave = async () => {
-    const schedule_time = to24HourFormat(hour, minute, amPm);
-
+  const handleSave = () => {
     const newRoutine = {
-      routine_name: routineNameState,
-      feeder_id: selectedDevice,
-      schedule_time: schedule_time,
-      portion_size: portionSize,
+      feeder: selectedFeeder,
+      name: routineName,
+      time,
+      portionSize,
+      notificationsEnabled,
     };
 
-    const result = await register('rotines', newRoutine);
-
-    if (result.success) {
-      router.replace({
-        pathname: '/home',
-        params: { routine: JSON.stringify(newRoutine) },
-      });
-    } else {
-      alert('Erro ao salvar: ' + result.error);
-    }
+    router.push({
+      pathname: '/home',
+      params: { routine: JSON.stringify(newRoutine) },
+    });
   };
 
   const hours = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'));
@@ -104,24 +49,13 @@ export default function CreateRoutine() {
       <Text style={styles.subtitle}>Selecione o alimentador</Text>
       <View style={styles.pickerWrapper}>
         <Picker
-          selectedValue={selectedDevice || (devices[0]?.id.toString() ?? '')}
-          onValueChange={(itemValue) => {
-            console.log('Selecionado:', itemValue);
-            setSelectedDevice(itemValue);
-          }}
-          enabled={devices.length > 0}
+          selectedValue={selectedFeeder}
+          onValueChange={(itemValue) => setSelectedFeeder(itemValue)}
           style={styles.picker}
-          itemStyle={styles.pickerItem}
-          mode="dropdown"
         >
-          {devices.map((device) => (
-            <Picker.Item
-              key={device.id}
-              label={device.nickname || `Alimentador`}
-              value={device.id.toString()}
-              color='#000'
-            />
-          ))}
+          <Picker.Item label="Alimentadores Disponíveis" value="" />
+          <Picker.Item label="Alimentador 1" value="feeder1" />
+          <Picker.Item label="Alimentador 2" value="feeder2" />
         </Picker>
       </View>
 
@@ -129,13 +63,12 @@ export default function CreateRoutine() {
       <TextInput
         style={styles.input}
         placeholder="Digite o nome da rotina"
-        value={routineNameState}
-        onChangeText={setRoutineNameState}
-        editable={!!selectedDevice}
+        value={routineName}
+        onChangeText={setRoutineName}
       />
 
       <Text style={styles.title}>Horário</Text>
-      <TouchableOpacity style={styles.timeBox} onPress={() => setModalVisible(true)} disabled={!selectedDevice}>
+      <TouchableOpacity style={styles.timeBox} onPress={() => setModalVisible(true)}>
         <Text style={styles.timeText}>{time}</Text>
       </TouchableOpacity>
 
@@ -146,21 +79,33 @@ export default function CreateRoutine() {
             <View style={styles.pickerRow}>
               <ScrollView style={styles.pickerColumn}>
                 {hours.map((h) => (
-                  <TouchableOpacity key={h} onPress={() => setHour(h)} style={hour === h && styles.selectedItem}>
+                  <TouchableOpacity
+                    key={h}
+                    onPress={() => setHour(h)}
+                    style={hour === h && styles.selectedItem}
+                  >
                     <Text style={hour === h ? styles.selectedText : styles.pickerText}>{h}</Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
               <ScrollView style={styles.pickerColumn}>
                 {minutes.map((m) => (
-                  <TouchableOpacity key={m} onPress={() => setMinute(m)} style={minute === m && styles.selectedItem}>
+                  <TouchableOpacity
+                    key={m}
+                    onPress={() => setMinute(m)}
+                    style={minute === m && styles.selectedItem}
+                  >
                     <Text style={minute === m ? styles.selectedText : styles.pickerText}>{m}</Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
               <ScrollView style={styles.pickerColumn}>
                 {['AM', 'PM'].map((p) => (
-                  <TouchableOpacity key={p} onPress={() => setAmPm(p as 'AM' | 'PM')} style={amPm === p && styles.selectedItem}>
+                  <TouchableOpacity
+                    key={p}
+                    onPress={() => setAmPm(p as 'AM' | 'PM')}
+                    style={amPm === p && styles.selectedItem}
+                  >
                     <Text style={amPm === p ? styles.selectedText : styles.pickerText}>{p}</Text>
                   </TouchableOpacity>
                 ))}
@@ -168,7 +113,10 @@ export default function CreateRoutine() {
             </View>
 
             <View style={styles.modalButtons}>
-              <TouchableOpacity onPress={() => setModalVisible(false)} style={[styles.modalBtn, { backgroundColor: '#ccc' }]}>
+              <TouchableOpacity
+                onPress={() => setModalVisible(false)}
+                style={[styles.modalBtn, { backgroundColor: '#ccc' }]}
+              >
                 <Text>Cancelar</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.modalBtn}>
@@ -185,8 +133,7 @@ export default function CreateRoutine() {
           <TouchableOpacity
             key={size}
             style={[styles.portionBtn, portionSize === size && styles.portionSelected]}
-            onPress={() => setPortionSize(size as any)}
-            disabled={!selectedDevice}
+            onPress={() => setPortionSize(size as 'Small' | 'Medium' | 'Large')}
           >
             <Text style={{ color: portionSize === size ? '#fff' : '#00B894' }}>{size}</Text>
           </TouchableOpacity>
@@ -194,15 +141,11 @@ export default function CreateRoutine() {
       </View>
 
       <View style={styles.switchContainer}>
-        <Text style={styles.subtitle}>Notificações Ativadas</Text>
-        <Switch value={notificationsEnabled} onValueChange={setNotificationsEnabled} disabled={!selectedDevice} />
+        <Text style={styles.subtitle}>Notificações ativadas</Text>
+        <Switch value={notificationsEnabled} onValueChange={setNotificationsEnabled} />
       </View>
 
-      <TouchableOpacity
-        style={[styles.saveButton, { opacity: selectedDevice ? 1 : 0.4 }]}
-        onPress={handleSave}
-        disabled={!selectedDevice}
-      >
+      <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
         <Text style={styles.saveText}>Salvar Configuração</Text>
       </TouchableOpacity>
     </View>
@@ -216,40 +159,9 @@ const styles = StyleSheet.create({
   input: {
     borderWidth: 1,
     borderColor: '#ccc',
-    borderRadius: 6,
     padding: 12,
+    borderRadius: 8,
     marginBottom: 20,
-    fontSize: 16,
-  },
-
-  pickerWrapper: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 6,
-    marginBottom: 20,
-    backgroundColor: '#f0f0f0',
-    height: Platform.OS === 'ios' ? 100 : undefined,
-    overflow: 'hidden',
-    justifyContent: 'center',
-  },
-
-  picker: {
-    flex: 1,
-    paddingHorizontal: 10,
-    color: '#000',
-    backgroundColor: 'transparent', // pode ser removido, mas ajuda no Android
-    ...Platform.select({
-      ios: {
-        marginTop: -80, // visualmente alinha melhor no iOS
-      },
-      android: {
-        fontSize: 16,
-      },
-    }),
-  },
-
-  pickerItem: {
-    fontSize: 16,
   },
   timeBox: {
     borderWidth: 1,
@@ -308,7 +220,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     textAlign: 'center',
     paddingVertical: 10,
-    color: "#000",
   },
   selectedItem: {
     backgroundColor: '#00B894',
@@ -331,5 +242,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     backgroundColor: '#00B894',
     borderRadius: 6,
+  },
+  pickerWrapper: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    overflow: 'hidden',
+    marginBottom: 20,
+  },
+  picker: {
+    height: 50,
+    width: '100%',
   },
 });
