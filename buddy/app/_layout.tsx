@@ -8,7 +8,7 @@ export default function Layout() {
       <Stack.Screen name="welcome" options={{ title: 'Bem-Vindo' }}/>
       <Stack.Screen name="register" options={{ title: 'Registrar-se' }}/>
       <Stack.Screen name="criarRotinas" options={{ title: 'Criar Rotinas' }}/>
-      <Stack.Screen name="cadastro-alimentador" options={{ title: 'Cadastro Alimentador' }}/>
+      <Stack.Screen name="cadastroAlimentador" options={{ title: 'Cadastro de Alimentador' }} />
       <Stack.Screen name="manual" options={{ title: 'Emparelhar Dispositivo' }}/>
       <Stack.Screen name="home" options={{ headerShown: false }}/>
       <Stack.Screen name="settings" options={{ title: 'Configurações' }}/>

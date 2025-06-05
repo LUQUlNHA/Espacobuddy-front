@@ -62,7 +62,7 @@ export default function DevicePairing() {
 
       <TouchableOpacity
         style={[styles.addBox, { marginTop: 20, backgroundColor: '#e0f7fa' }]}
-        onPress={() => router.push('/cadastro-alimentador')}
+        onPress={() => router.push('/cadastroAlimentador')}
       >
         <Ionicons name="create-outline" size={24} color="#00796b" />
         <View style={styles.addInfo}>

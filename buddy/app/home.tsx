@@ -15,8 +15,12 @@ import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { getInfo, decodeToken } from '../utils/keycloak';
 import { listTable, updateRoutineName } from '../utils/database';
+import MqttService from '../utils/mqttService'; // 🚨 IMPORT MQTT
+import { URLS } from '../utils/enviroment';
 
 export default function Home() {
+  const [devices, setDevices] = useState([]); // <- adicione isso ao topo
+
   const router = useRouter();
   const { routine } = useLocalSearchParams();
 
@@ -29,8 +33,70 @@ export default function Home() {
   const [editedRoutineName, setEditedRoutineName] = useState('');
   const [currentEditingRoutineId, setCurrentEditingRoutineId] = useState(null);
 
+  useEffect(() => {
+    const fetchDeviceId = async () => {
+      try {
+        const token = await getInfo("access_token");
+        const decoded = await decodeToken(token);
+        const userId = decoded.sub;
+
+        console.log("User id: ", userId);
+
+        const result = await listTable('user_feeders', { user_id: userId });
+
+        if (!result?.data || result.data.length === 0) {
+          console.warn('⚠️ Nenhum dispositivo encontrado para o usuário.');
+          setDevices([]);
+          return;
+        }
+
+        const devices = result.data.map((entry, index) => ({
+          id: entry.feeder_id || index,
+          nickname: entry.nickname || `Dispositivo ${index + 1}`,
+        }));
+
+        setDevices(devices);
+        console.log("📦 Dispositivos carregados:", devices);
+
+      } catch (error) {
+        console.error("Erro ao carregar devices:", error);
+      }
+    };
+
+    fetchDeviceId();
+  }, []);
+
+  // 🚨 Conectar ao MQTT na montagem
+  useEffect(() => {
+    console.log(devices[0]?.id);
+    MqttService.connect().catch((err) => {
+      console.error("Erro ao conectar ao MQTT:", err);
+    });
+
+    return () => {
+      MqttService.disconnect(); // Desconecta ao desmontar
+    };
+  }, []);
+
   const handleDispense = () => {
-    console.log('Comida dispensada!');
+    const topic = `${URLS.mqtt_pub_url}/${devices[0]?.id}`;
+
+    // Determina a porção com base no que foi selecionado
+    let portion = "medium"; // valor padrão
+    if (smallOn) portion = "small";
+    else if (largeOn) portion = "large";
+
+    const message = {
+      feed: {
+        portion: portion,
+        time: new Date().toISOString(),
+      },
+      device_id: devices[0]?.id, // usa o primeiro device disponível
+    };
+
+    MqttService.publish(topic, message);
+    console.log("📤 Mensagem MQTT enviada para dispensar comida.");
+    console.log(message);
   };
 
   const handleRoutinePress = (rotina) => {
@@ -90,7 +156,7 @@ export default function Home() {
           setRotinas(fetched);
         }
       } catch (error) {
-        console.error("Erro ao carregar rotinas do usuário:", error);
+        console.log("Erro ao carregar rotinas do usuário:", error);
       }
     };
 
@@ -149,6 +215,7 @@ export default function Home() {
         >
           <Text style={styles.createRoutineText}>Criar Rotina</Text>
         </TouchableOpacity>
+
         {rotinas.map((rotina) => (
           <View key={rotina.id} style={styles.routineCard}>
             <View style={styles.routineInfo}>
@@ -169,7 +236,6 @@ export default function Home() {
             </View>
           </View>
         ))}
-
 
         <Modal
           visible={isModalVisible}
