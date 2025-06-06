@@ -1,33 +1,16 @@
+import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { BarCodeScanner } from 'expo-barcode-scanner';
 import { useRouter } from 'expo-router';
 import { register } from '../utils/database';
 import { getInfo, decodeToken } from '../utils/keycloak';
 
 export default function CadastroAlimentador() {
   const [nome, setNome] = useState('');
-  const [imagem, setImagem] = useState(null);
-  const [scanning, setScanning] = useState(false);
-  const [scannedData, setScannedData] = useState('');
+  const [imagem, setImagem] = useState<string | null>(null);
+  const [codigo, setCodigo] = useState('');
   const router = useRouter();
-
-  useEffect(() => {
-    (async () => {
-      const { status } = await BarCodeScanner.requestPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permissão negada', 'Você precisa permitir o acesso à câmera para escanear QR Code.');
-      }
-    })();
-  }, []);
-
-  const handleBarCodeScanned = ({ type, data }) => {
-    setScanning(false);
-    setScannedData(data);
-    Alert.alert('QR Code lido!', `Conteúdo: ${data}`);
-  };
 
   const abrirCamera = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -54,8 +37,8 @@ export default function CadastroAlimentador() {
       return;
     }
 
-    if (!scannedData) {
-      Alert.alert('Erro', 'Escaneie o QR Code do alimentador primeiro.');
+    if (!codigo.trim()) {
+      Alert.alert('Erro', 'Digite o código do alimentador.');
       return;
     }
 
@@ -67,7 +50,7 @@ export default function CadastroAlimentador() {
       const response = await register('user_feeders', {
         user_id: userId,
         nickname: nome,
-        feeder_id: scannedData,
+        feeder_id: codigo,
       });
 
       console.log('Alimentador cadastrado:', response);
@@ -81,43 +64,31 @@ export default function CadastroAlimentador() {
 
   return (
     <View style={styles.container}>
-      {scanning ? (
-        <BarCodeScanner
-          onBarCodeScanned={handleBarCodeScanned}
-          style={{ flex: 1 }}
-        />
-      ) : (
-        <>
-          <Text style={styles.title}>Cadastro de Alimentador</Text>
+      <Text style={styles.title}>Cadastro de Alimentador</Text>
 
-          <TextInput
-            style={styles.input}
-            placeholder="Nome do alimentador"
-            value={nome}
-            onChangeText={setNome}
-          />
+      <TextInput
+        style={styles.input}
+        placeholder="Nome do alimentador"
+        value={nome}
+        onChangeText={setNome}
+      />
 
-          <TouchableOpacity style={styles.cameraButton} onPress={abrirCamera}>
-            <Ionicons name="camera-outline" size={24} color="#fff" />
-            <Text style={styles.cameraText}>Abrir Câmera</Text>
-          </TouchableOpacity>
 
-          <TouchableOpacity style={styles.qrButton} onPress={() => setScanning(true)}>
-            <Ionicons name="qr-code-outline" size={24} color="#fff" />
-            <Text style={styles.cameraText}>Escanear QR Code</Text>
-          </TouchableOpacity>
+      <TextInput
+        style={styles.input}
+        placeholder="Código do alimentador"
+        value={codigo}
+        onChangeText={setCodigo}
+      />
 
-          {scannedData ? (
-            <Text style={{ marginTop: 10, color: 'green' }}>
-              QR escaneado: {scannedData}
-            </Text>
-          ) : null}
+      <TouchableOpacity style={styles.cameraButton} onPress={abrirCamera}>
+        <Ionicons name="camera-outline" size={24} color="#fff" />
+        <Text style={styles.cameraText}>Escanear QR Code</Text>
+      </TouchableOpacity>
 
-          <TouchableOpacity style={styles.saveButton} onPress={salvarAlimentador}>
-            <Text style={styles.saveText}>Salvar Alimentador</Text>
-          </TouchableOpacity>
-        </>
-      )}
+      <TouchableOpacity style={styles.saveButton} onPress={salvarAlimentador}>
+        <Text style={styles.saveText}>Salvar Alimentador</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -146,15 +117,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#00796b',
-    padding: 12,
-    borderRadius: 8,
-    justifyContent: 'center',
-    marginBottom: 10,
-  },
-  qrButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#2196F3',
     padding: 12,
     borderRadius: 8,
     justifyContent: 'center',
