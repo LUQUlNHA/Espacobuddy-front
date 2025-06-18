@@ -8,16 +8,24 @@ import {
 } from 'react-native';
 import { useEffect, useState } from 'react';
 
-import { getInfo, decodeToken } from '../utils/keycloak'; // ajuste o caminho se necessário
+import { getInfo, decodeToken } from '../utils/keycloak';
+import { getByUserId } from '../utils/database'; // certifique-se de que essa função está implementada
 
+/*************  ✨ Windsurf Command ⭐  *************/
+/**
+ * Tela de configurações do app, onde o usuário pode alterar configurações de
+ * alertas e notificações, e visualizar informações do seu perfil.
+ *
+
+ */
 export default function Settings() {
   const [lowFoodAlert, setLowFoodAlert] = useState(true);
   const [feedingNotification, setFeedingNotification] = useState(false);
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [stockKg, setStockKg] = useState(''); // novo estado
 
-  // Busca token e extrai dados do usuário
   const getUserInfo = async () => {
     const token = await getInfo('access_token');
     if (!token) return;
@@ -26,6 +34,20 @@ export default function Settings() {
     if (decoded) {
       setName(decoded.given_name || decoded.name || '');
       setEmail(decoded.email || decoded.preferred_username || '');
+
+      const userId = decoded.sub;
+
+      try {
+        const feederData = await getByUserId('user_feeders', userId);
+        if (feederData?.stock_kg !== undefined && feederData?.stock_kg !== null) {
+          setStockKg(`${feederData.stock_kg} kg`);
+        } else {
+          setStockKg('Não informado');
+        }
+      } catch (error) {
+        console.log('Erro ao buscar ração:', error);
+        setStockKg('Erro ao carregar');
+      }
     }
   };
 
@@ -35,8 +57,6 @@ export default function Settings() {
 
   return (
     <ScrollView style={styles.container}>
-
-      {/* Seção de Alertas */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Alertas</Text>
 
@@ -61,7 +81,6 @@ export default function Settings() {
         </View>
       </View>
 
-      {/* Seção de Informações de Perfil */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Informações do Perfil</Text>
 
@@ -82,24 +101,25 @@ export default function Settings() {
             editable={false}
           />
         </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>Ração total disponível</Text>
+          <TextInput
+            style={styles.input}
+            value={stockKg}
+            editable={false}
+          />
+        </View>
       </View>
     </ScrollView>
   );
 }
-
-// styles... (mantém igual)
-
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
     padding: 15,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 20,
   },
   section: {
     marginBottom: 30,
@@ -143,4 +163,3 @@ const styles = StyleSheet.create({
     color: '#555',
   },
 });
-

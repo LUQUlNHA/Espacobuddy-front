@@ -12,6 +12,8 @@ export default function Layout() {
       <Stack.Screen name="manual" options={{ title: 'Emparelhar Dispositivo' }}/>
       <Stack.Screen name="home" options={{ headerShown: false }}/>
       <Stack.Screen name="settings" options={{ title: 'Configurações' }}/>
+      <Stack.Screen name="anuncio" options={{ title: 'Promoções' }}/>
+      <Stack.Screen name="anuncio2" options={{ title: 'Rações' }}/>
     </Stack>
   );
 }

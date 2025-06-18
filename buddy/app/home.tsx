@@ -15,12 +15,11 @@ import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { getInfo, decodeToken } from '../utils/keycloak';
 import { listTable, updateRoutineName } from '../utils/database';
-import MqttService from '../utils/mqttService'; // 🚨 IMPORT MQTT
+import MqttService from '../utils/mqttService';
 import { URLS } from '../utils/enviroment';
 
 export default function Home() {
-  const [devices, setDevices] = useState([]); // <- adicione isso ao topo
-
+  const [devices, setDevices] = useState([]);
   const router = useRouter();
   const { routine } = useLocalSearchParams();
 
@@ -40,12 +39,9 @@ export default function Home() {
         const decoded = await decodeToken(token);
         const userId = decoded.sub;
 
-        console.log("User id: ", userId);
-
         const result = await listTable('user_feeders', { user_id: userId });
 
         if (!result?.data || result.data.length === 0) {
-          console.warn('⚠️ Nenhum dispositivo encontrado para o usuário.');
           setDevices([]);
           return;
         }
@@ -56,8 +52,6 @@ export default function Home() {
         }));
 
         setDevices(devices);
-        console.log("📦 Dispositivos carregados:", devices);
-
       } catch (error) {
         console.error("Erro ao carregar devices:", error);
       }
@@ -66,23 +60,14 @@ export default function Home() {
     fetchDeviceId();
   }, []);
 
-  // 🚨 Conectar ao MQTT na montagem
   useEffect(() => {
-    console.log(devices[0]?.id);
-    MqttService.connect().catch((err) => {
-      console.error("Erro ao conectar ao MQTT:", err);
-    });
-
-    return () => {
-      MqttService.disconnect(); // Desconecta ao desmontar
-    };
+    MqttService.connect().catch((err) => console.error("Erro ao conectar ao MQTT:", err));
+    return () => MqttService.disconnect();
   }, []);
 
   const handleDispense = () => {
     const topic = `${URLS.mqtt_pub_url}/${devices[0]?.id}`;
-
-    // Determina a porção com base no que foi selecionado
-    let portion = "medium"; // valor padrão
+    let portion = "medium";
     if (smallOn) portion = "small";
     else if (largeOn) portion = "large";
 
@@ -91,12 +76,10 @@ export default function Home() {
         portion: portion,
         time: new Date().toISOString(),
       },
-      device_id: devices[0]?.id, // usa o primeiro device disponível
+      device_id: devices[0]?.id,
     };
 
     MqttService.publish(topic, message);
-    console.log("📤 Mensagem MQTT enviada para dispensar comida.");
-    console.log(message);
   };
 
   const handleRoutinePress = (rotina) => {
@@ -122,8 +105,6 @@ export default function Home() {
               r.id === currentEditingRoutineId ? { ...r, nome: editedRoutineName } : r
             )
           );
-        } else {
-          console.error('Erro ao salvar rotina:', result.message);
         }
       } catch (err) {
         console.error('Erro ao atualizar rotina:', err);
@@ -183,7 +164,9 @@ export default function Home() {
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.header}>
           <Text style={styles.title}>Controle de Alimentação</Text>
-          <Ionicons name="settings-outline" size={24} />
+          <TouchableOpacity onPress={() => router.push('/anuncio2')}>
+            <Text style={styles.promoButton}>Promoções</Text>
+          </TouchableOpacity>
         </View>
 
         <TextInput
@@ -313,18 +296,25 @@ function BottomNav() {
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  container: {
-    padding: 15,
-    paddingBottom: 80,
-  },
+  screen: { flex: 1, backgroundColor: '#fff' },
+  container: { padding: 15, paddingBottom: 80 },
   header: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
   },
   title: { fontSize: 18, fontWeight: 'bold' },
+  promoButton: {
+    fontSize: 14,
+    color: '#008080',
+    fontWeight: 'bold',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: '#008080',
+    borderRadius: 11,
+  },
   search: {
     backgroundColor: '#f0f0f0', borderRadius: 10, padding: 10, marginBottom: 15,
   },
@@ -335,27 +325,39 @@ const styles = StyleSheet.create({
   sliderRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10,
   },
-  bar: {
-    height: 8, borderRadius: 5, marginHorizontal: 10,
-  },
-  image: {
-    width: '100%', height: 280, borderRadius: 10, marginTop: 15,
-  },
-  imageLabel: {
-    textAlign: 'center', marginTop: 5, fontWeight: '500',
-  },
-  success: {
-    textAlign: 'center', color: 'green', marginBottom: 10,
-  },
+  bar: { height: 8, borderRadius: 5, marginHorizontal: 10 },
+  image: { width: '100%', height: 280, borderRadius: 10, marginTop: 15 },
+  imageLabel: { textAlign: 'center', marginTop: 5, fontWeight: '500' },
+  success: { textAlign: 'center', color: 'green', marginBottom: 10 },
   createRoutineButton: {
     borderColor: '#008080', borderWidth: 1, borderRadius: 10, padding: 10, alignItems: 'center', marginVertical: 10,
   },
   createRoutineText: { color: '#008080', fontWeight: 'bold' },
-  routineItem: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#eee',
+  routineCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
   },
-  routineText: { flex: 1, marginHorizontal: 10 },
+  routineInfo: { flex: 1 },
+  routineName: {
+    fontSize: 16, fontWeight: 'bold', marginBottom: 4, color: '#333',
+  },
+  routineDetail: {
+    fontSize: 14, color: '#555', marginBottom: 2,
+  },
+  routineActions: {
+    flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+  },
+  navItem: { alignItems: 'center' },
   bottomNav: {
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -367,44 +369,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     width: '100%',
   },
-
-  routineCard: {
-  backgroundColor: '#fff',
-  borderRadius: 12,
-  padding: 16,
-  marginBottom: 12,
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.1,
-  shadowRadius: 4,
-  elevation: 3,
-  flexDirection: 'row',
-  justifyContent: 'space-between',
-  alignItems: 'flex-start',
-},
-routineInfo: {
-  flex: 1,
-},
-routineName: {
-  fontSize: 16,
-  fontWeight: 'bold',
-  marginBottom: 4,
-  color: '#333',
-},
-routineDetail: {
-  fontSize: 14,
-  color: '#555',
-  marginBottom: 2,
-},
-routineActions: {
-  flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  gap: 8,
-},
-
-
-  navItem: { alignItems: 'center' },
   modalOverlay: {
     flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },

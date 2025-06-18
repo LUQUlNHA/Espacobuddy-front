@@ -1,6 +1,10 @@
 {
-  "compilerOptions": {},
   "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "jsx": "react-jsx",          // ou "react-native" se seu projeto for React Native puro
+    "types": ["expo-camera", "react", "react-native"]
+    // outras configs que quiser adicionar
+  },
   "include": [
     "**/*.ts",
     "**/*.tsx",

@@ -16,12 +16,12 @@ export default function Login() {
     try {
       // Entrar no sistema sem o keycloak
       if (email === "pedro@gmail.com" && password === "1234") {
-        router.replace('/home');
+        router.replace('/anuncio');
       }
 
       const result = await loginWithCredentials(email, password);
       if (result.success) {
-        router.replace('/home');
+        router.replace('/anuncio');
       } else {
         setError(result.message || 'Erro ao fazer login');
       }
